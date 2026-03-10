@@ -4,8 +4,9 @@ export async function POST(req: NextRequest) {
   const { pin } = await req.json();
   const correct = process.env.DASHBOARD_PIN;
 
+  // If no PIN configured, allow access (dev mode)
   if (!correct) {
-    return NextResponse.json({ ok: false, error: "PIN not configured" }, { status: 500 });
+    return NextResponse.json({ ok: true });
   }
 
   if (pin === correct) {

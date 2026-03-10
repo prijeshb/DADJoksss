@@ -84,17 +84,19 @@ export default function DashboardPage() {
   const [authed, setAuthed] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
 
-  useEffect(() => {
-    if (sessionStorage.getItem("dash_auth") === "1") setAuthed(true);
-  }, []);
-
-  if (!authed) return <PinGate onAuth={() => setAuthed(true)} />;
+  // All hooks MUST be called before any early return (React rules of hooks)
   const { jokeStats } = useAnalyticsStore();
   const { jokesViewed, jokesLiked, jokesShared } = useSessionStore();
   const { tests, createTest, updateTest, deleteTest } = useABTestStore();
   const { weights, updateWeights } = useFeedStore();
 
   const allStats = useMemo(() => Object.values(jokeStats), [jokeStats]);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("dash_auth") === "1") setAuthed(true);
+  }, []);
+
+  if (!authed) return <PinGate onAuth={() => setAuthed(true)} />;
 
   const totalImpressions = allStats.reduce((sum, s) => sum + s.impressions, 0);
   const totalLikes = allStats.reduce((sum, s) => sum + s.likes, 0);
