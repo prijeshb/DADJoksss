@@ -7,22 +7,34 @@ import { useAnalyticsStore, useSessionStore, useABTestStore, useFeedStore } from
 import { jokes, getJokeById } from "@/data/jokes";
 import type { JokeAnalytics } from "@/lib/types";
 
-// Change this PIN to whatever you want
-const DASHBOARD_PIN = "4242";
-
 function PinGate({ onAuth }: { onAuth: () => void }) {
   const [input, setInput] = useState("");
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input === DASHBOARD_PIN) {
-      sessionStorage.setItem("dash_auth", "1");
-      onAuth();
-    } else {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/dashboard-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: input }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem("dash_auth", "1");
+        onAuth();
+      } else {
+        setError(true);
+        setInput("");
+        setTimeout(() => setError(false), 1200);
+      }
+    } catch {
       setError(true);
       setInput("");
       setTimeout(() => setError(false), 1200);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -52,9 +64,10 @@ function PinGate({ onAuth }: { onAuth: () => void }) {
           )}
           <button
             type="submit"
-            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-xl py-2.5 text-sm font-semibold transition-colors"
+            disabled={loading}
+            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-xl py-2.5 text-sm font-semibold transition-colors disabled:opacity-50"
           >
-            Unlock
+            {loading ? "Checking…" : "Unlock"}
           </button>
         </form>
         <Link href="/" className="block text-center text-white/20 text-xs mt-6 hover:text-white/40 transition-colors">
