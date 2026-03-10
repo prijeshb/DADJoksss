@@ -1133,6 +1133,63 @@ export const jokes: DadJoke[] = [
     difficulty: 2,
     tags: ["animal", "pun", "magic"],
   },
+
+  // ==================== FEATURED ====================
+  {
+    id: "en-feat-001",
+    question: "Why don't eggs tell jokes?",
+    answer: "They might crack up!",
+    language: "english",
+    category: "food",
+    wrongAnswers: ["They're too scrambled", "They're too hard-boiled", "They've heard them all before"],
+    difficulty: 1,
+    tags: ["food", "classic"],
+    featured: true,
+  },
+  {
+    id: "en-feat-002",
+    question: "What do you call a fish wearing a bowtie?",
+    answer: "Sofish-ticated!",
+    language: "english",
+    category: "animal",
+    wrongAnswers: ["A fancy fish", "A dressed-up bass", "A formal trout"],
+    difficulty: 2,
+    tags: ["animal", "wordplay"],
+    featured: true,
+  },
+  {
+    id: "en-feat-003",
+    question: "What do you call a dinosaur that sleeps all day?",
+    answer: "A dino-snore!",
+    language: "english",
+    category: "animal",
+    wrongAnswers: ["A lazy-saurus", "A rest-o-raptor", "A nap-a-don"],
+    difficulty: 1,
+    tags: ["animal", "pun"],
+    featured: true,
+  },
+  {
+    id: "en-feat-004",
+    question: "Which tea is the most emotional?",
+    answer: "Sen-si-tea-ve!",
+    language: "english",
+    category: "food",
+    wrongAnswers: ["Emo-tea-onal", "Sympa-tea-tic", "Feel-tea"],
+    difficulty: 2,
+    tags: ["food", "wordplay"],
+    featured: true,
+  },
+  {
+    id: "en-feat-005",
+    question: "Which vegetable is very cool?",
+    answer: "Cool-iflower!",
+    language: "english",
+    category: "food",
+    wrongAnswers: ["Cool-cumber", "Broc-cool-i", "Chilli-pepper"],
+    difficulty: 1,
+    tags: ["food", "wordplay"],
+    featured: true,
+  },
 ];
 
 export function getJokesByLanguage(language: "english" | "hinglish" | "mix"): DadJoke[] {
@@ -1157,14 +1214,17 @@ export function getShuffledJokes(
   exclude: string[] = [],
   seed?: number
 ): DadJoke[] {
-  let pool = getJokesByLanguage(language).filter((j) => !exclude.includes(j.id));
-  // Fisher-Yates shuffle with optional seed
+  const all = getJokesByLanguage(language).filter((j) => !exclude.includes(j.id));
+  const featured = all.filter((j) => j.featured);
+  const rest = all.filter((j) => !j.featured);
+  // Shuffle non-featured pool
   const rng = seed !== undefined ? seededRandom(seed) : Math.random;
-  for (let i = pool.length - 1; i > 0; i--) {
+  for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [rest[i], rest[j]] = [rest[j], rest[i]];
   }
-  return pool;
+  // Featured always at the top
+  return [...featured, ...rest];
 }
 
 function seededRandom(seed: number) {

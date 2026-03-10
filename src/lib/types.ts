@@ -1,5 +1,5 @@
 export type Language = "english" | "hinglish";
-export type JokeCategory = "pun" | "wordplay" | "classic" | "science" | "food" | "animal" | "tech" | "general";
+export type JokeCategory = "pun" | "wordplay" | "classic" | "science" | "food" | "animal" | "tech" | "general" | "adult";
 
 export interface DadJoke {
   id: string;
@@ -11,6 +11,7 @@ export interface DadJoke {
   source?: string;
   difficulty: 1 | 2 | 3; // 1=easy, 2=medium, 3=hard
   tags: string[];
+  featured?: boolean;
 }
 
 export interface JokeAnalytics {

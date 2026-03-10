@@ -1,16 +1,81 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useAnalyticsStore, useSessionStore, useABTestStore, useFeedStore } from "@/lib/store";
 import { jokes, getJokeById } from "@/data/jokes";
 import type { JokeAnalytics } from "@/lib/types";
 
+// Change this PIN to whatever you want
+const DASHBOARD_PIN = "4242";
+
+function PinGate({ onAuth }: { onAuth: () => void }) {
+  const [input, setInput] = useState("");
+  const [error, setError] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input === DASHBOARD_PIN) {
+      sessionStorage.setItem("dash_auth", "1");
+      onAuth();
+    } else {
+      setError(true);
+      setInput("");
+      setTimeout(() => setError(false), 1200);
+    }
+  };
+
+  return (
+    <main className="min-h-dvh bg-background flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-xs"
+      >
+        <h1 className="text-center text-white/60 text-sm font-semibold mb-6 uppercase tracking-widest">Dashboard Access</h1>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={8}
+            placeholder="Enter PIN"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            autoFocus
+            className={`w-full bg-surface border rounded-xl px-4 py-3 text-center text-white text-lg tracking-[0.4em] outline-none transition-colors ${
+              error ? "border-red-500/60" : "border-white/10 focus:border-white/30"
+            }`}
+          />
+          {error && (
+            <p className="text-center text-red-400 text-xs">Incorrect PIN</p>
+          )}
+          <button
+            type="submit"
+            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-xl py-2.5 text-sm font-semibold transition-colors"
+          >
+            Unlock
+          </button>
+        </form>
+        <Link href="/" className="block text-center text-white/20 text-xs mt-6 hover:text-white/40 transition-colors">
+          ← Back to jokes
+        </Link>
+      </motion.div>
+    </main>
+  );
+}
+
 type Tab = "overview" | "jokes" | "abtests" | "algorithm";
 
 export default function DashboardPage() {
+  const [authed, setAuthed] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+
+  useEffect(() => {
+    if (sessionStorage.getItem("dash_auth") === "1") setAuthed(true);
+  }, []);
+
+  if (!authed) return <PinGate onAuth={() => setAuthed(true)} />;
   const { jokeStats } = useAnalyticsStore();
   const { jokesViewed, jokesLiked, jokesShared } = useSessionStore();
   const { tests, createTest, updateTest, deleteTest } = useABTestStore();

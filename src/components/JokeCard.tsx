@@ -47,13 +47,12 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
     };
   }, [joke.id, isTop]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-flip when timer completes
+  // On timer complete: reveal answer on front face so they can see options — don't auto-flip
   useEffect(() => {
-    if (isComplete && !flipped) {
+    if (isComplete && !revealed) {
       setRevealed(true);
-      setFlipped(true);
     }
-  }, [isComplete, flipped]);
+  }, [isComplete, revealed]);
 
   const handleLike = useCallback(() => {
     if (liked) {
@@ -208,7 +207,20 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
             </div>
 
             {/* Question + Answer Options */}
-            <div className="flex-1 flex flex-col justify-center px-4 pb-2 min-h-0 gap-4">
+            <div className="flex-1 flex flex-col justify-center px-4 pb-2 min-h-0 gap-3">
+              {/* Tags */}
+              {joke.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 justify-center">
+                  {joke.tags.slice(0, 4).map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/[0.06] font-medium uppercase tracking-wider"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center justify-center">
                 <h2 className="text-lg md:text-xl font-bold text-center leading-snug text-white">
                   {joke.question}
