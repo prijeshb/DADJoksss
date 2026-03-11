@@ -6,7 +6,7 @@ import type { Language } from "@/lib/types";
 
 const filters: { value: Language | "mix"; label: string; emoji: string }[] = [
   { value: "mix", label: "Mix", emoji: "🌍" },
-  { value: "english", label: "English", emoji: "🇬🇧" },
+  { value: "english", label: "English", emoji: "🇺🇸" },
   { value: "hinglish", label: "Hinglish", emoji: "🇮🇳" },
 ];
 

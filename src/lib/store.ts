@@ -205,6 +205,7 @@ interface ABTestState {
   createTest: (test: Omit<ABTest, "id">) => string;
   updateTest: (id: string, updates: Partial<ABTest>) => void;
   deleteTest: (id: string) => void;
+  updateVariantJokes: (testId: string, variantId: string, jokeIds: string[]) => void;
   trackVariantImpression: (testId: string, variantId: string) => void;
   trackVariantLike: (testId: string, variantId: string) => void;
   trackVariantShare: (testId: string, variantId: string) => void;
@@ -251,6 +252,14 @@ export const useABTestStore = create<ABTestState>()(
       deleteTest: (id) =>
         set((state) => ({
           tests: state.tests.filter((t) => t.id !== id),
+        })),
+      updateVariantJokes: (testId, variantId, jokeIds) =>
+        set((state) => ({
+          tests: state.tests.map((t) =>
+            t.id === testId
+              ? { ...t, variants: t.variants.map((v) => v.id === variantId ? { ...v, jokeIds } : v) }
+              : t
+          ),
         })),
       trackVariantImpression: (testId, variantId) =>
         set((state) => ({

@@ -22,10 +22,12 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
   const [liked, setLiked] = useState(false);
   const [showLaughRipple, setShowLaughRipple] = useState(false);
   const [laughBurst, setLaughBurst] = useState(false);
+  const [likeHeartbeat, setLikeHeartbeat] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "sent">("idle");
   const [dragX, setDragX] = useState(0);
   const cardStartTime = useRef(Date.now());
 
-  const { timeLeft, isRunning, isComplete, progress, start, reset, toggle } = useTimer(20);
+  const { timeLeft, isRunning, isComplete, start, reset, toggle } = useTimer(20);
   const isPaused = !isRunning && !isComplete && timeLeft < 20;
   const { trackImpression, trackLike, trackShare, trackCorrectAnswer, trackWrongAnswer, trackTimeOnCard, trackSkip } = useAnalyticsStore();
   const { addViewed, addLiked, removeLiked, addShared, isLiked: checkIsLiked } = useSessionStore();
@@ -64,30 +66,26 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
       setLiked(true);
       setShowLaughRipple(true);
       setLaughBurst(true);
-      // Play laugh sound
-      try {
-        const audio = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
-        audio.volume = 0.3;
-        audio.play().catch(() => {});
-      } catch {}
+      setLikeHeartbeat(true);
       setTimeout(() => setShowLaughRipple(false), 600);
       setTimeout(() => setLaughBurst(false), 800);
+      setTimeout(() => setLikeHeartbeat(false), 900);
     }
   }, [liked, joke.id, trackLike, addLiked, removeLiked]);
 
   const handleShare = useCallback(async () => {
+    if (shareState === "sent") return;
+    setShareState("sent");
     trackShare(joke.id);
     addShared(joke.id);
     const text = `😂 Dad Joke Alert!\n\nQ: ${joke.question}\nA: ${joke.answer}\n\nGet more at DadJokes Daily!`;
     if (navigator.share) {
-      try {
-        await navigator.share({ title: "Dad Joke", text });
-      } catch {}
+      try { await navigator.share({ title: "Dad Joke", text }); } catch {}
     } else {
       await navigator.clipboard.writeText(text);
-      // Show toast notification - we'll handle this via a simple alert-style animation
     }
-  }, [joke, trackShare, addShared]);
+    setTimeout(() => setShareState("idle"), 1800);
+  }, [joke, trackShare, addShared, shareState]);
 
   const handleCorrect = useCallback(() => {
     trackCorrectAnswer(joke.id);
@@ -108,12 +106,6 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
       setFlipped((f) => !f);
     }
   }, [revealed, reset]);
-
-  // Category emoji
-  const categoryEmoji: Record<string, string> = {
-    pun: "🎯", wordplay: "🔤", classic: "👴", science: "🔬",
-    food: "🍔", animal: "🐻", tech: "💻", general: "🎪",
-  };
 
   // Language badge
   const langBadge = joke.language === "hinglish"
@@ -191,7 +183,6 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xl">{categoryEmoji[joke.category] || "😄"}</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${langBadge.color}`}>
                   {langBadge.label}
                 </span>
@@ -251,7 +242,6 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
             {/* Header */}
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xl">😂</span>
                 <span className="text-[10px] text-white/50 font-medium uppercase tracking-wider">Answer</span>
               </div>
               <button
@@ -281,38 +271,37 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
             {/* Action buttons */}
             <div className="px-4 pb-4 flex-shrink-0">
               <div className="flex items-center justify-center gap-3">
-                {/* Like button */}
+                {/* Like button — stamp + heartbeat microinteraction */}
                 <motion.button
                   onClick={handleLike}
-                  whileTap={{ scale: 0.85 }}
-                  className={`relative flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold transition-all duration-200 ${
+                  animate={likeHeartbeat ? { scale: [1, 0.88, 1.14, 0.97, 1.06, 1] } : { scale: 1 }}
+                  transition={likeHeartbeat ? { duration: 0.55, ease: "easeOut" } : {}}
+                  whileTap={{ scale: 0.82, rotate: 3 }}
+                  className={`relative flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold transition-colors duration-200 ${
                     liked
                       ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                      : "bg-white/5 text-white/70 border border-white/10 hover:bg-white/10"
+                      : "bg-white/5 text-white/70 border border-white/10"
                   }`}
                 >
-                  <motion.span
-                    className="text-lg"
-                    animate={laughBurst ? { scale: [1, 1.8, 1], rotate: [0, -15, 15, 0] } : {}}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                  >
-                    {liked ? "😂" : "🤍"}
-                  </motion.span>
-                  <span className="text-xs">{liked ? "Loved!" : "Ha Ha!"}</span>
-                  {showLaughRipple && (
-                    <span className="absolute inset-0 rounded-2xl border-2 border-rose-400 laugh-ripple" />
-                  )}
+                  {/* Laugh burst — 15 particles from button center */}
                   <AnimatePresence>
                     {laughBurst && (
                       <>
-                        {[...Array(3)].map((_, i) => (
+                        {([
+                          { x: -141, y: -51  }, { x: -173, y: -100 }, { x: -192, y: -161 },
+                          { x: -116, y: -138 }, { x: -110, y: -190 }, { x:  -51, y: -141 },
+                          { x:  -49, y: -276 }, { x:    0, y: -200  }, { x:   49, y: -276 },
+                          { x:   51, y: -141 }, { x:  110, y: -190  }, { x:  116, y: -138 },
+                          { x:  192, y: -161 }, { x:  173, y: -100  }, { x:  141, y:  -51 },
+                        ] as { x: number; y: number }[]).map((pos, i) => (
                           <motion.span
                             key={i}
-                            className="absolute text-xl pointer-events-none"
-                            initial={{ opacity: 1, y: 0, x: (i - 1) * 14, scale: 0.6 }}
-                            animate={{ opacity: 0, y: -50, scale: 1.2 }}
+                            className="absolute text-2xl pointer-events-none z-50"
+                            style={{ left: "50%", top: "50%", marginLeft: -12, marginTop: -12 }}
+                            initial={{ opacity: 1, x: 0, y: 0, scale: 0.3, rotate: 0 }}
+                            animate={{ opacity: 0, x: pos.x, y: pos.y, scale: 1.3, rotate: (i % 2 === 0 ? 1 : -1) * 25 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.6, delay: i * 0.08, ease: "easeOut" }}
+                            transition={{ duration: 0.8, delay: i * 0.04, ease: [0.15, 0, 0.75, 1] }}
                           >
                             😂
                           </motion.span>
@@ -320,16 +309,65 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
                       </>
                     )}
                   </AnimatePresence>
+                  <motion.span
+                    className="text-lg"
+                    animate={laughBurst
+                      ? { scale: [1, 2, 1], rotate: [0, -20, 20, -10, 0], y: [0, -6, 0] }
+                      : { scale: 1, rotate: 0, y: 0 }}
+                    transition={{ duration: 0.45, ease: "easeOut" }}
+                  >
+                    {liked ? "😂" : "🤍"}
+                  </motion.span>
+                  <span className="text-xs">{liked ? "Loved!" : "Ha Ha!"}</span>
+                  {showLaughRipple && (
+                    <span className="absolute inset-0 rounded-2xl border-2 border-rose-400 laugh-ripple" />
+                  )}
                 </motion.button>
 
-                {/* Share button */}
+                {/* Share button — hotel-booking send microinteraction */}
                 <motion.button
                   onClick={handleShare}
-                  whileTap={{ scale: 0.85 }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 font-semibold transition-all duration-200"
+                  whileTap={{ scale: 0.88 }}
+                  animate={shareState === "sent"
+                    ? { backgroundColor: "rgba(52,211,153,0.15)", borderColor: "rgba(52,211,153,0.35)" }
+                    : { backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.10)" }}
+                  transition={{ duration: 0.25 }}
+                  className="relative flex items-center gap-2 px-5 py-2.5 rounded-2xl border font-semibold overflow-hidden"
                 >
-                  <span className="text-lg">📤</span>
-                  <span className="text-xs">Share</span>
+                  {/* Icon: flies out on sent */}
+                  <motion.span
+                    className="text-lg"
+                    animate={shareState === "sent"
+                      ? { y: -24, x: 10, opacity: 0, scale: 0.4 }
+                      : { y: 0, x: 0, opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, ease: "easeIn" }}
+                  >
+                    📤
+                  </motion.span>
+                  {/* Checkmark: lands when sent */}
+                  <AnimatePresence>
+                    {shareState === "sent" && (
+                      <motion.span
+                        className="absolute left-[14px] text-lg"
+                        initial={{ y: 20, opacity: 0, scale: 0.5 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        transition={{ duration: 0.3, delay: 0.2, type: "spring", stiffness: 300 }}
+                      >
+                        ✅
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  {/* Label morphs */}
+                  <motion.span
+                    className="text-xs"
+                    animate={shareState === "sent"
+                      ? { color: "rgb(52,211,153)" }
+                      : { color: "rgba(255,255,255,0.7)" }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {shareState === "sent" ? "Sent!" : "Share"}
+                  </motion.span>
                 </motion.button>
               </div>
 

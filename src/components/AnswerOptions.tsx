@@ -25,6 +25,7 @@ export default function AnswerOptions({ joke, onCorrect, onWrong, revealed }: An
   const [wrongMessage, setWrongMessage] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState(false);
   const [shakeIndex, setShakeIndex] = useState<number | null>(null);
+  const [lightUpIndex, setLightUpIndex] = useState<number | null>(null);
 
   // Shuffle answers once per joke
   const shuffledAnswers = useMemo(() => {
@@ -49,13 +50,15 @@ export default function AnswerOptions({ joke, onCorrect, onWrong, revealed }: An
       const newCount = wrongCount + 1;
       setWrongCount(newCount);
       setShakeIndex(index);
+      setLightUpIndex(index);
       setWrongMessage(WRONG_MESSAGES[Math.min(newCount - 1, WRONG_MESSAGES.length - 1)]);
       onWrong();
       setTimeout(() => setShakeIndex(null), 500);
+      setTimeout(() => setLightUpIndex(null), 600);
     }
   };
 
-  const getOptionStyle = (answer: string, index: number) => {
+  const getOptionStyle = (answer: string) => {
     if (revealed || isCorrect) {
       if (answer === joke.answer) {
         return "border-emerald-500 bg-emerald-500/20 text-emerald-300";
@@ -93,7 +96,7 @@ export default function AnswerOptions({ joke, onCorrect, onWrong, revealed }: An
         <motion.button
           key={`${joke.id}-${index}`}
           onClick={() => handleSelect(answer, index)}
-          className={`w-full text-left px-3 py-2 rounded-lg border transition-all duration-200 text-xs ${getOptionStyle(answer, index)} ${shakeIndex === index ? "shake" : ""}`}
+          className={`w-full text-left px-3 py-2 rounded-lg border transition-all duration-200 text-xs ${getOptionStyle(answer)} ${shakeIndex === index ? "shake" : ""} ${lightUpIndex === index ? "lighten-up" : ""}`}
           whileTap={!isCorrect && !revealed ? { scale: 0.97 } : {}}
           disabled={isCorrect || revealed}
         >

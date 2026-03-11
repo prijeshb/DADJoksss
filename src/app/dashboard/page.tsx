@@ -3,9 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useAnalyticsStore, useSessionStore, useABTestStore, useFeedStore } from "@/lib/store";
+import { useAnalyticsStore, useSessionStore, useFeedStore } from "@/lib/store";
 import { jokes, getJokeById } from "@/data/jokes";
 import type { JokeAnalytics } from "@/lib/types";
+import ABTestPanel from "@/components/ABTestPanel";
 
 function PinGate({ onAuth }: { onAuth: () => void }) {
   const [input, setInput] = useState("");
@@ -86,9 +87,8 @@ export default function DashboardPage() {
 
   // All hooks MUST be called before any early return (React rules of hooks)
   const { jokeStats } = useAnalyticsStore();
-  const { jokesViewed, jokesLiked, jokesShared } = useSessionStore();
-  const { tests, createTest, updateTest, deleteTest } = useABTestStore();
-  const { weights, updateWeights } = useFeedStore();
+  const { jokesViewed } = useSessionStore();
+const { weights, updateWeights } = useFeedStore();
 
   const allStats = useMemo(() => Object.values(jokeStats), [jokeStats]);
 
@@ -217,7 +217,7 @@ export default function DashboardPage() {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-6"
             >
-              <ABTestsPanel tests={tests} createTest={createTest} updateTest={updateTest} deleteTest={deleteTest} />
+              <ABTestPanel jokeStats={jokeStats} />
             </motion.div>
           )}
 
@@ -368,184 +368,6 @@ function JokesTable({ stats }: { stats: Record<string, JokeAnalytics> }) {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function ABTestsPanel({ tests, createTest, updateTest, deleteTest }: {
-  tests: ReturnType<typeof useABTestStore.getState>["tests"];
-  createTest: ReturnType<typeof useABTestStore.getState>["createTest"];
-  updateTest: ReturnType<typeof useABTestStore.getState>["updateTest"];
-  deleteTest: ReturnType<typeof useABTestStore.getState>["deleteTest"];
-}) {
-  const [showCreate, setShowCreate] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    createTest({
-      name: newName,
-      description: newDesc,
-      variants: [
-        { id: "v1", name: "Variant A", jokeIds: [], impressions: 0, likes: 0, shares: 0, avgEngagement: 0 },
-        { id: "v2", name: "Variant B", jokeIds: [], impressions: 0, likes: 0, shares: 0, avgEngagement: 0 },
-      ],
-      startDate: new Date().toISOString().split("T")[0],
-      status: "draft",
-    });
-    setNewName("");
-    setNewDesc("");
-    setShowCreate(false);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">A/B Tests</h2>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-semibold hover:bg-primary/30 transition-colors"
-        >
-          + New Test
-        </button>
-      </div>
-
-      {/* Create form */}
-      <AnimatePresence>
-        {showCreate && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="bg-surface/50 border border-white/10 rounded-2xl p-4 space-y-3">
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Test name..."
-                className="w-full bg-background/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30"
-              />
-              <textarea
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Description..."
-                className="w-full bg-background/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 resize-none h-20"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleCreate}
-                  className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold"
-                >
-                  Create
-                </button>
-                <button
-                  onClick={() => setShowCreate(false)}
-                  className="px-4 py-2 bg-white/5 text-white/50 border border-white/10 rounded-xl text-xs"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Test cards */}
-      <div className="space-y-4">
-        {tests.map((test) => (
-          <div key={test.id} className="bg-surface/30 border border-white/5 rounded-2xl overflow-hidden">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-sm">{test.name}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                    test.status === "running" ? "bg-emerald-500/20 text-emerald-400" :
-                    test.status === "completed" ? "bg-blue-500/20 text-blue-400" :
-                    "bg-white/10 text-white/50"
-                  }`}>
-                    {test.status}
-                  </span>
-                </div>
-                <div className="flex gap-1">
-                  {test.status === "draft" && (
-                    <button
-                      onClick={() => updateTest(test.id, { status: "running" })}
-                      className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-lg text-[10px]"
-                    >
-                      Start
-                    </button>
-                  )}
-                  {test.status === "running" && (
-                    <button
-                      onClick={() => updateTest(test.id, { status: "completed" })}
-                      className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-[10px]"
-                    >
-                      Complete
-                    </button>
-                  )}
-                  <button
-                    onClick={() => deleteTest(test.id)}
-                    className="px-2 py-1 bg-red-500/20 text-red-400 rounded-lg text-[10px]"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-              <p className="text-xs text-white/40 mb-3">{test.description}</p>
-
-              {/* Variants comparison */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {test.variants.map((variant) => {
-                  const likeRate = variant.impressions > 0 ? (variant.likes / variant.impressions * 100).toFixed(1) : "0";
-                  const shareRate = variant.impressions > 0 ? (variant.shares / variant.impressions * 100).toFixed(1) : "0";
-                  const isWinner = test.variants.length === 2 &&
-                    variant.impressions > 0 &&
-                    test.variants.every((v) => v.impressions > 0) &&
-                    variant.likes / variant.impressions >= Math.max(...test.variants.map((v) => v.impressions > 0 ? v.likes / v.impressions : 0));
-
-                  return (
-                    <div
-                      key={variant.id}
-                      className={`bg-background/30 rounded-xl p-3 border ${isWinner && test.status !== "draft" ? "border-emerald-500/30" : "border-white/5"}`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold">{variant.name}</span>
-                        {isWinner && test.status !== "draft" && (
-                          <span className="text-[10px] text-emerald-400">Winner</span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-[10px]">
-                        <div>
-                          <span className="text-white/30">Impressions</span>
-                          <p className="font-semibold">{variant.impressions}</p>
-                        </div>
-                        <div>
-                          <span className="text-white/30">Like Rate</span>
-                          <p className="font-semibold text-rose-400">{likeRate}%</p>
-                        </div>
-                        <div>
-                          <span className="text-white/30">Share Rate</span>
-                          <p className="font-semibold text-blue-400">{shareRate}%</p>
-                        </div>
-                        <div>
-                          <span className="text-white/30">Engagement</span>
-                          <p className="font-semibold text-primary">{variant.avgEngagement}%</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {tests.length === 0 && (
-        <p className="text-center text-white/30 text-sm py-8">No A/B tests yet. Create one to start experimenting!</p>
-      )}
     </div>
   );
 }

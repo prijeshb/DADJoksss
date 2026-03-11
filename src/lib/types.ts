@@ -12,6 +12,8 @@ export interface DadJoke {
   difficulty: 1 | 2 | 3; // 1=easy, 2=medium, 3=hard
   tags: string[];
   featured?: boolean;
+  likes?: number;
+  shares?: number;
 }
 
 export interface JokeAnalytics {
