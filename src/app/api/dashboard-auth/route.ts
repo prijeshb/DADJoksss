@@ -1,80 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
+import { computeSessionToken } from "@/lib/dashboard-auth";
 
-// In-memory rate limiter: max 5 attempts per IP per 15 minutes
+// In-memory rate limiter: 5 attempts per 15 minutes per IP
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000;
-// Periodic cleanup to prevent unbounded Map growth
-let lastCleanup = Date.now();
-const CLEANUP_INTERVAL_MS = 60 * 1000; // Clean up every minute
-
-function cleanupStaleEntries() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
-  lastCleanup = now;
-  for (const [ip, record] of attempts) {
-    if (now > record.resetAt) {
-      attempts.delete(ip);
-    }
-  }
-}
 
 function getIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
+  return req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
 }
 
-function isRateLimited(ip: string): boolean {
+function checkRateLimit(ip: string): boolean {
   const now = Date.now();
-  const record = attempts.get(ip);
-  if (!record || now > record.resetAt) {
-    // Cleanup stale entries periodically
-    cleanupStaleEntries();
+  const entry = attempts.get(ip);
+  if (!entry || now > entry.resetAt) {
     attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
     return false;
   }
-  record.count += 1;
-  return record.count > MAX_ATTEMPTS;
+  entry.count++;
+  return entry.count > MAX_ATTEMPTS;
 }
 
-function clearAttempts(ip: string) {
+function clearRateLimit(ip: string) {
   attempts.delete(ip);
 }
 
 export async function POST(req: NextRequest) {
-  const correct = process.env.DASHBOARD_PIN;
+  const configuredPin = process.env.DASHBOARD_PIN;
 
-  // Fail-closed: if no PIN is configured the dashboard is inaccessible
-  if (!correct) {
-    return NextResponse.json(
-      { ok: false, error: "Dashboard not configured" },
-      { status: 503 }
-    );
+  // Fail-closed: deny access if PIN is not configured
+  if (!configuredPin) {
+    return NextResponse.json({ ok: false }, { status: 503 });
   }
 
   const ip = getIp(req);
-  if (isRateLimited(ip)) {
-    return NextResponse.json(
-      { ok: false, error: "Too many attempts. Try again later." },
-      { status: 429 }
-    );
+  if (checkRateLimit(ip)) {
+    return NextResponse.json({ ok: false }, { status: 429 });
   }
 
-  let pin: string;
+  let body: { pin?: string };
   try {
-    const body = await req.json();
-    pin = String(body.pin ?? "").trim();
+    body = await req.json();
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  if (pin === correct) {
-    clearAttempts(ip);
-    return NextResponse.json({ ok: true });
+  const submitted = body.pin ?? "";
+  const expectedToken = computeSessionToken(configuredPin);
+  const submittedToken = computeSessionToken(submitted);
+
+  let match = false;
+  try {
+    match =
+      submittedToken.length === expectedToken.length &&
+      timingSafeEqual(Buffer.from(submittedToken, "hex"), Buffer.from(expectedToken, "hex"));
+  } catch {
+    match = false;
   }
 
-  return NextResponse.json({ ok: false }, { status: 401 });
+  if (!match) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  clearRateLimit(ip);
+
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set("dash_session", expectedToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/dashboard",
+    maxAge: 60 * 60 * 8, // 8 hours
+  });
+  return res;
 }
