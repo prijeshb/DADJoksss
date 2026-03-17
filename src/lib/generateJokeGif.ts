@@ -41,18 +41,12 @@ function drawBackground(ctx: CanvasRenderingContext2D, variant: "question" | "an
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 }
 
-function drawBranding(ctx: CanvasRenderingContext2D, jokeId: string) {
-  // App name
+function drawBranding(ctx: CanvasRenderingContext2D) {
+  // App name only — link is shared separately outside the GIF
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("DADjoksss", WIDTH / 2, HEIGHT - 36);
-
-  // Joke link — use a relative path so the watermark works on any domain
-  ctx.fillStyle = "rgba(255,255,255,0.2)";
-  ctx.font = "11px -apple-system, BlinkMacSystemFont, sans-serif";
-  // Only embed the path, not a hardcoded domain
-  ctx.fillText(`/joke/${jokeId}`, WIDTH / 2, HEIGHT - 18);
+  ctx.fillText("DADjoksss", WIDTH / 2, HEIGHT - 24);
 }
 
 function renderQuestionFrame(ctx: CanvasRenderingContext2D, joke: DadJoke) {
@@ -85,9 +79,9 @@ function renderQuestionFrame(ctx: CanvasRenderingContext2D, joke: DadJoke) {
   // Tap hint
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText("Answer reveals in 2s…", WIDTH / 2, HEIGHT - 64);
+  ctx.fillText("Answer reveals in 2s…", WIDTH / 2, HEIGHT - 56);
 
-  drawBranding(ctx, joke.id);
+  drawBranding(ctx);
 }
 
 function renderAnswerFrame(ctx: CanvasRenderingContext2D, joke: DadJoke) {
@@ -121,7 +115,7 @@ function renderAnswerFrame(ctx: CanvasRenderingContext2D, joke: DadJoke) {
     ctx.fillText(line, WIDTH / 2, startY + i * lineHeight);
   });
 
-  drawBranding(ctx, joke.id);
+  drawBranding(ctx);
 }
 
 function releaseCanvas(canvas: HTMLCanvasElement) {

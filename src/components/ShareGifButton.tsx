@@ -52,11 +52,12 @@ export default function ShareGifButton({ joke }: Props) {
 
       const gifFile = new File([blob], `dadjoksss-${joke.id}.gif`, { type: "image/gif" });
 
+      const jokeUrl = `${window.location.origin}/joke/${joke.id}`;
+
       if (navigator.canShare?.({ files: [gifFile] })) {
         await navigator.share({
           files: [gifFile],
-          title: "Dad Joke 😂",
-          text: `Q: ${joke.question}\n\nA: ${joke.answer}`,
+          url: jokeUrl,
         });
       } else {
         // Fallback: download the GIF
