@@ -7,16 +7,34 @@ import { getShuffledJokes } from "@/data/jokes";
 import { useSessionStore } from "@/lib/store";
 import JokeCard from "./JokeCard";
 
-export default function SwipeStack() {
-  const { languageFilter } = useSessionStore();
+interface Props {
+  initialJokeId?: string;
+}
+
+export default function SwipeStack({ initialJokeId }: Props) {
+  const languageFilterStored = useSessionStore((s) => s.languageFilter);
+  // Defer localStorage-backed value until after hydration so server/client match
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const languageFilter = mounted ? languageFilterStored : "mix";
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [seed, setSeed] = useState(() => Date.now());
+  // Constant seed on initial render so server and client produce identical HTML;
+  // updated to Date.now() only inside effects/callbacks (client-only).
+  const [seed, setSeed] = useState(0);
   const historyRef = useRef<number[]>([]);
 
   // Get shuffled jokes based on language filter
   const jokeStack = useMemo(() => {
     return getShuffledJokes(languageFilter, [], seed);
   }, [languageFilter, seed]);
+
+  // If an initial joke ID was requested, surface it first
+  useEffect(() => {
+    if (!initialJokeId) return;
+    const idx = jokeStack.findIndex((j) => j.id === initialJokeId);
+    if (idx !== -1) setCurrentIndex(idx);
+  }, [initialJokeId, jokeStack]);
 
   // Reset index when language changes
   useEffect(() => {

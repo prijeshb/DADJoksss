@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   description: "Swipe through dad jokes. Online or offline.",
   manifest: "/manifest.json",
   themeColor: "#8b5cf6",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -23,6 +27,7 @@ export default function RootLayout({
         />
         <meta name="theme-color" content="#8b5cf6" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icon.svg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

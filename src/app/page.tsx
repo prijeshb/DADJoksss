@@ -1,48 +1,21 @@
-"use client";
+import { jokes } from "@/data/jokes";
+import HomeClient from "./HomeClient";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import SwipeStack from "@/components/SwipeStack";
-import LanguageFilter from "@/components/LanguageFilter";
+interface Props {
+  searchParams: Promise<{ joke?: string }>;
+}
 
-export default function Home() {
-  const [key, setKey] = useState(0);
+// Sanitize joke ID — only allow alphanumeric and hyphens, max 20 chars
+function sanitizeJokeId(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const clean = raw.replace(/[^a-z0-9-]/gi, "").slice(0, 20);
+  // Validate it actually exists in the dataset — prevents open redirect / unknown IDs
+  return jokes.some((j) => j.id === clean) ? clean : undefined;
+}
 
-  return (
-    <main className="h-dvh flex flex-col bg-background overflow-hidden">
-      {/* Header */}
-      <header className="flex-shrink-0 px-3 pt-3 pb-1">
-        <div className="flex items-center justify-between gap-2">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-1.5 flex-shrink-0"
-          >
-            <h1 className="text-base font-black gradient-text leading-tight">DADjoksss</h1>
-          </motion.div>
+export default async function Home({ searchParams }: Props) {
+  const { joke } = await searchParams;
+  const initialJokeId = sanitizeJokeId(joke);
 
-          <div className="flex items-center gap-1.5">
-            <LanguageFilter onChange={() => setKey((k) => k + 1)} />
-          </div>
-        </div>
-      </header>
-
-      {/* Card Stack */}
-      <div className="flex-1 px-3 pb-2 pt-1 min-h-0">
-        <div className="relative w-full h-full max-w-md mx-auto">
-          <SwipeStack key={key} />
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="flex-shrink-0 px-3 pb-2 relative">
-        <div className="max-w-md mx-auto">
-          <div className="bg-surface/30 border border-white/5 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
-            <span className="text-xs">📅</span>
-            <span className="text-[10px] text-white/40">Today&apos;s Pick</span>
-          </div>
-        </div>
-      </footer>
-    </main>
-  );
+  return <HomeClient initialJokeId={initialJokeId} />;
 }

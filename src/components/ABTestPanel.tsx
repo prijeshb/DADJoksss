@@ -28,7 +28,7 @@ function CopyLinkButton({ testId, variantId }: { testId: string; variantId: stri
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(feedLink(testId, variantId));
+    navigator.clipboard?.writeText(feedLink(testId, variantId));
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };

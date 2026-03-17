@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const daily = searchParams.get("daily");
   const shuffle = searchParams.get("shuffle");
   const isSmart = searchParams.get("ab") === "true";
-  const limit = parseInt(searchParams.get("limit") || "50");
+  const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "50") || 50), 100);
 
   if (daily === "true") {
     return NextResponse.json({ joke: getDailyJoke() });
