@@ -42,11 +42,31 @@ function drawBackground(ctx: CanvasRenderingContext2D, variant: "question" | "an
 }
 
 function drawBranding(ctx: CanvasRenderingContext2D) {
-  // App name only — link is shared separately outside the GIF
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, sans-serif";
+  // Mini brand icon: purple rounded square + "DAD" + "joksss" — mirrors public/icon.svg
+  const iconSize = 44;
+  const iconX = WIDTH / 2 - iconSize / 2;
+  const iconY = HEIGHT - iconSize - 12;
+  const radius = 10;
+
+  // Purple gradient background
+  const bg = ctx.createLinearGradient(iconX, iconY, iconX + iconSize, iconY + iconSize);
+  bg.addColorStop(0, "#8b5cf6");
+  bg.addColorStop(1, "#6d28d9");
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.roundRect(iconX, iconY, iconSize, iconSize, radius);
+  ctx.fill();
+
+  // "DAD" text inside the icon
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 18px -apple-system, BlinkMacSystemFont, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("DADjoksss", WIDTH / 2, HEIGHT - 24);
+  ctx.fillText("DAD", WIDTH / 2, iconY + 23);
+
+  // "joksss" sub-text inside the icon
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
+  ctx.fillText("joksss", WIDTH / 2, iconY + 36);
 }
 
 function renderQuestionFrame(ctx: CanvasRenderingContext2D, joke: DadJoke) {
@@ -77,10 +97,6 @@ function renderQuestionFrame(ctx: CanvasRenderingContext2D, joke: DadJoke) {
   });
 
   // Tap hint
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.font = "12px -apple-system, BlinkMacSystemFont, sans-serif";
-  ctx.fillText("Answer reveals in 2s…", WIDTH / 2, HEIGHT - 56);
-
   drawBranding(ctx);
 }
 
@@ -179,8 +195,8 @@ export async function generateJokeGif(joke: DadJoke, signal?: AbortSignal): Prom
       width: WIDTH,
       height: HEIGHT,
       frames: [
-        { data: frame1.data, delay: 200 },  // 2s
-        { data: frame2.data, delay: 350 },  // 3.5s
+        { data: frame1.data, delay: 400 },  // 4s  — time to read the question
+        { data: frame2.data, delay: 350 },  // 3.5s — time to read the answer  →  total 7.5s
       ],
     });
 

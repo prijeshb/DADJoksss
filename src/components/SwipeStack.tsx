@@ -12,9 +12,16 @@ interface Props {
 }
 
 export default function SwipeStack({ initialJokeId }: Props) {
-  const { languageFilter } = useSessionStore();
+  const languageFilterStored = useSessionStore((s) => s.languageFilter);
+  // Defer localStorage-backed value until after hydration so server/client match
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const languageFilter = mounted ? languageFilterStored : "mix";
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [seed, setSeed] = useState(() => Date.now());
+  // Constant seed on initial render so server and client produce identical HTML;
+  // updated to Date.now() only inside effects/callbacks (client-only).
+  const [seed, setSeed] = useState(0);
   const historyRef = useRef<number[]>([]);
 
   // Get shuffled jokes based on language filter

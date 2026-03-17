@@ -82,7 +82,7 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
     const text = `😂 Dad Joke Alert!\n\nQ: ${joke.question}\nA: ${joke.answer}\n\nGet more at DadJokes Daily!`;
     if (navigator.share) {
       try { await navigator.share({ title: "Dad Joke", text }); } catch {}
-    } else {
+    } else if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
     }
     setTimeout(() => setShareState("idle"), 1800);

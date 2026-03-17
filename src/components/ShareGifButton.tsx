@@ -50,28 +50,23 @@ export default function ShareGifButton({ joke }: Props) {
       // Component may have unmounted while awaiting — check abort state
       if (controller.signal.aborted) return;
 
-      const gifFile = new File([blob], `dadjoksss-${joke.id}.gif`, { type: "image/gif" });
+      const file = new File([blob], `dadjoksss-${joke.id}.gif`, { type: "image/gif" });
 
-      const jokeUrl = `${window.location.origin}/joke/${joke.id}`;
-
-      if (navigator.canShare?.({ files: [gifFile] })) {
-        await navigator.share({
-          files: [gifFile],
-          url: jokeUrl,
-        });
+      if (navigator.canShare?.({ files: [file] })) {
+        // Mobile: native share sheet with the actual GIF file
+        await navigator.share({ files: [file] });
       } else {
-        // Fallback: download the GIF
+        // Desktop: trigger a file download — user can then attach it to WhatsApp Web etc.
         const url = URL.createObjectURL(blob);
         blobUrlRef.current = url;
         const a = document.createElement("a");
         a.href = url;
-        a.download = gifFile.name;
+        a.download = file.name;
         a.click();
-        // Revoke after a short delay to allow the download to start
         setTimeout(() => {
           URL.revokeObjectURL(url);
           if (blobUrlRef.current === url) blobUrlRef.current = null;
-        }, 5000);
+        }, 5_000);
       }
 
       setState("done");
@@ -89,7 +84,7 @@ export default function ShareGifButton({ joke }: Props) {
   const label = {
     idle: "GIF",
     generating: "…",
-    done: "Sent!",
+    done: "Done!",
     error: "Error",
   }[state];
 

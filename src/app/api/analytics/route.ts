@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// In a real app, this would connect to a database
-// For now, analytics are stored client-side via zustand persist
+const ALLOWED_EVENTS = new Set(["view", "like", "share", "answer", "swipe"]);
+const JOKE_ID_RE = /^[a-z0-9-]{1,20}$/i;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { event, jokeId, data } = body;
 
-    // Log analytics event (in production, write to DB)
-    console.log(`[Analytics] ${event} - Joke: ${jokeId}`, data);
+    // Validate event type against allowlist — prevents log injection
+    const event = typeof body.event === "string" ? body.event : "";
+    if (!ALLOWED_EVENTS.has(event)) {
+      return NextResponse.json({ error: "Invalid event" }, { status: 400 });
+    }
+
+    // Validate joke ID format
+    const jokeId = typeof body.jokeId === "string" ? body.jokeId : "";
+    if (jokeId && !JOKE_ID_RE.test(jokeId)) {
+      return NextResponse.json({ error: "Invalid jokeId" }, { status: 400 });
+    }
+
+    // Log only validated structured fields — never raw user input
+    console.log(`[Analytics] event=${event} jokeId=${jokeId || "none"}`);
 
     return NextResponse.json({ success: true });
   } catch {
@@ -17,7 +29,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  // In production, this would return aggregated analytics from DB
   return NextResponse.json({
     message: "Analytics are stored client-side. Visit /dashboard to view.",
   });
