@@ -7,6 +7,7 @@ import { useTimer } from "@/hooks/useTimer";
 import TimerCircle from "./TimerCircle";
 import AnswerOptions from "./AnswerOptions";
 import { useAnalyticsStore, useSessionStore } from "@/lib/store";
+import ShareGifButton from "./ShareGifButton";
 
 interface JokeCardProps {
   joke: DadJoke;
@@ -369,6 +370,9 @@ export default function JokeCard({ joke, onSwipeLeft, onSwipeRight, isTop, zInde
                     {shareState === "sent" ? "Sent!" : "Share"}
                   </motion.span>
                 </motion.button>
+
+                {/* Share as GIF */}
+                <ShareGifButton joke={joke} />
               </div>
 
               {/* Swipe hint */}

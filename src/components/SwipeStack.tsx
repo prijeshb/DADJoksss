@@ -7,7 +7,11 @@ import { getShuffledJokes } from "@/data/jokes";
 import { useSessionStore } from "@/lib/store";
 import JokeCard from "./JokeCard";
 
-export default function SwipeStack() {
+interface Props {
+  initialJokeId?: string;
+}
+
+export default function SwipeStack({ initialJokeId }: Props) {
   const { languageFilter } = useSessionStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [seed, setSeed] = useState(() => Date.now());
@@ -17,6 +21,13 @@ export default function SwipeStack() {
   const jokeStack = useMemo(() => {
     return getShuffledJokes(languageFilter, [], seed);
   }, [languageFilter, seed]);
+
+  // If an initial joke ID was requested, surface it first
+  useEffect(() => {
+    if (!initialJokeId) return;
+    const idx = jokeStack.findIndex((j) => j.id === initialJokeId);
+    if (idx !== -1) setCurrentIndex(idx);
+  }, [initialJokeId, jokeStack]);
 
   // Reset index when language changes
   useEffect(() => {
