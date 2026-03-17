@@ -195,8 +195,8 @@ export async function generateJokeGif(joke: DadJoke, signal?: AbortSignal): Prom
       width: WIDTH,
       height: HEIGHT,
       frames: [
-        { data: frame1.data, delay: 400 },  // 4s  — time to read the question
-        { data: frame2.data, delay: 350 },  // 3.5s — time to read the answer  →  total 7.5s
+        { data: frame1.data, delay: 4000 },  // 4s  — time to read the question
+        { data: frame2.data, delay: 3500 },  // 3.5s — time to read the answer  →  total 7.5s
       ],
     });
 
