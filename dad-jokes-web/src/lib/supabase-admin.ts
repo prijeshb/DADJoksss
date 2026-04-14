@@ -154,7 +154,8 @@ export async function getPublishedJokeById(id: string): Promise<DadJoke | null> 
 
   const res = await fetch(`${supabaseUrl}/rest/v1/jokes?${query.toString()}`, {
     headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
-    next: { revalidate: 300 } as RequestInit,
+    // @ts-expect-error — Next.js extends fetch with `next.revalidate` at runtime
+    next: { revalidate: 300 },
   });
 
   if (!res.ok) return null;
