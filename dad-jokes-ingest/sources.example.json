@@ -1,0 +1,47 @@
+[
+  {
+    "id": "api-icanhazdadjoke",
+    "platform": "web",
+    "handle": "icanhazdadjoke",
+    "url": "https://icanhazdadjoke.com/search?limit=30",
+    "language_hint": "english",
+    "priority": "high",
+    "fetch_mode": "api"
+  },
+  {
+    "id": "web-rd-dadjokes",
+    "platform": "web",
+    "handle": "rd",
+    "url": "https://www.rd.com/jokes/",
+    "language_hint": "english",
+    "priority": "high",
+    "fetch_mode": "public_text"
+  },
+  {
+    "id": "web-upjoke-dadjokes",
+    "platform": "web",
+    "handle": "upjoke",
+    "url": "https://upjoke.com/dad-jokes",
+    "language_hint": "english",
+    "priority": "medium",
+    "fetch_mode": "public_text"
+  },
+  {
+    "id": "ig-bekarobar",
+    "platform": "instagram",
+    "handle": "bekarobar",
+    "url": "https://www.instagram.com/bekarobar/",
+    "language_hint": "mixed",
+    "priority": "high",
+    "fetch_mode": "browser"
+  },
+  {
+    "id": "yt-7rZpp7duhyw",
+    "platform": "youtube",
+    "handle": "dadjokes-compilation",
+    "url": "https://www.youtube.com/watch?v=7rZpp7duhyw",
+    "language_hint": "english",
+    "priority": "medium",
+    "fetch_mode": "transcript"
+  }
+]

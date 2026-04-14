@@ -1,0 +1,59 @@
+name: Ingest joke candidates
+
+on:
+  schedule:
+    # Runs every day at 9:00 AM UTC
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (extract only, no DB writes)"
+        type: boolean
+        default: false
+      source_ids:
+        description: "Comma-separated source IDs to run (blank = all active)"
+        type: string
+        default: ""
+      max_candidates:
+        description: "Max candidates per source"
+        type: number
+        default: 40
+
+jobs:
+  ingest:
+    name: Scrape and ingest candidates
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dad-jokes-ingest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: dad-jokes-ingest/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run ingest pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SCRAPE_SOURCES_JSON: ${{ secrets.SCRAPE_SOURCES_JSON }}
+          INGEST_DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          INGEST_SOURCE_IDS: ${{ inputs.source_ids || '' }}
+          INGEST_MAX_CANDIDATES: ${{ inputs.max_candidates || '40' }}
+        run: dadjokes-ingest --json
+
+      - name: Run tests
+        if: always()
+        run: pytest tests/ -v
